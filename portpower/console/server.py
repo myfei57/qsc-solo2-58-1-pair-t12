@@ -5,17 +5,23 @@ from __future__ import annotations
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from socketserver import BaseServer
+from typing import Protocol
 from urllib.parse import parse_qs, urlsplit
 
 from portpower.console.errors import error_response
 from portpower.console.http import Request, Response
-from portpower.console.router import Router
 
 MAX_BODY_BYTES = 4 * 1024 * 1024
 
 
+class Dispatcher(Protocol):
+    """Anything the server can ask to turn a request into a response."""
+
+    def dispatch(self, request: Request) -> Response: ...
+
+
 class _RequestHandler(BaseHTTPRequestHandler):
-    router: Router
+    router: Dispatcher
     server_version = "PortPowerConsole/1.0"
 
     def do_GET(self) -> None:  # noqa: N802 - BaseHTTPRequestHandler contract
@@ -53,6 +59,7 @@ class _RequestHandler(BaseHTTPRequestHandler):
             query=query,
             headers=headers,
             body=body,
+            remote=self.client_address[0] if self.client_address else "",
         )
 
     def _write(self, response: Response) -> None:
@@ -71,7 +78,7 @@ class _RequestHandler(BaseHTTPRequestHandler):
 
 
 def make_http_server(
-    router: Router,
+    router: Dispatcher,
     host: str,
     port: int,
     server_class: type[BaseServer] = ThreadingHTTPServer,
@@ -83,7 +90,7 @@ def make_http_server(
 class ConsoleServer:
     """Owns the HTTP server and the background serving thread."""
 
-    def __init__(self, router: Router, host: str, port: int) -> None:
+    def __init__(self, router: Dispatcher, host: str, port: int) -> None:
         self._httpd = make_http_server(router, host, port)
         self._thread: threading.Thread | None = None
 

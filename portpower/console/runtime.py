@@ -13,6 +13,11 @@ from portpower.cable.filter import MovingAverageFilter
 from portpower.cable.inventory import CableInventory
 from portpower.cable.monitor import TemperatureMonitor
 from portpower.cable.sensor import TemperatureSensor
+from portpower.console.gateway.contracts import ContractRegistry, default_contracts
+from portpower.console.gateway.idempotency import IdempotencyCache
+from portpower.console.gateway.ratelimit import RateLimiter
+from portpower.console.gateway.usage import VersionUsageLog
+from portpower.console.gateway.windows import WindowRegistry
 from portpower.disconn.breaker import Breaker
 from portpower.disconn.limit import LimitEnforcer
 from portpower.disconn.protect import Protector
@@ -64,6 +69,11 @@ class Runtime:
     shore: Breaker
     protector: Protector
     limiter: LimitEnforcer
+    contracts: ContractRegistry
+    windows: WindowRegistry
+    version_usage: VersionUsageLog
+    rate_limiter: RateLimiter
+    idempotency: IdempotencyCache
 
 
 def build_runtime(harbor: Harbor, store: RecordStore) -> Runtime:
@@ -101,4 +111,9 @@ def build_runtime(harbor: Harbor, store: RecordStore) -> Runtime:
         shore=Breaker(SHORE_BREAKER_ID),
         protector=Protector(PROTECTION_THRESHOLD, filter_window),
         limiter=LimitEnforcer(ProfileRegistry(store)),
+        contracts=default_contracts(),
+        windows=WindowRegistry(store),
+        version_usage=VersionUsageLog(store),
+        rate_limiter=RateLimiter(store),
+        idempotency=IdempotencyCache(store),
     )

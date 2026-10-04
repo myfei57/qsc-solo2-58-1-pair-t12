@@ -12,6 +12,7 @@ from portpower.console.handlers import (
     connect,
     disconnect,
     frequency,
+    gateway_admin,
     meter,
     quota,
     schedule,
@@ -78,6 +79,13 @@ def build_router(runtime) -> Router:
     router.get("/cables", bind(cable.cables, runtime))
     router.get("/cable/monitor", bind(cable.cable_monitor, runtime))
     router.post("/cable/sample", bind(cable.cable_sample, runtime))
+
+    router.get("/versions", bind(gateway_admin.version_list, runtime))
+    router.post("/versions/window", bind(gateway_admin.window_set, runtime))
+    router.delete("/versions/window", bind(gateway_admin.window_clear, runtime))
+    router.get("/versions/usage", bind(gateway_admin.version_usage, runtime))
+    router.get("/ratelimit", bind(gateway_admin.ratelimit_status, runtime))
+    router.post("/ratelimit", bind(gateway_admin.ratelimit_configure, runtime))
 
     def route_table(request: Request) -> Response:
         return Response.json(200, {"count": len(router), "routes": router.describe()})

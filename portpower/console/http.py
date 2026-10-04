@@ -19,6 +19,7 @@ class Request:
     query: Mapping[str, list[str]]
     headers: Mapping[str, str]
     body: bytes = b""
+    remote: str = ""
 
     def query_one(self, name: str, default: str | None = None) -> str | None:
         values = self.query.get(name)
