@@ -48,10 +48,10 @@ class ConnectRequest:
     def from_payload(cls, payload: dict[str, Any]) -> "ConnectRequest":
         return cls(
             berth=require_text(payload, "berth"),
-            ship=require_text(payload, "ship"),
+            ship=require_text(payload, "ship_id"),
             phase=require_text(payload, "phase"),
             frequency=require_number(payload, "frequency"),
-            load=require_number(payload, "load"),
+            load=require_number(payload, "max_load"),
             temperature=optional_number(payload, "temperature", 25.0),
         )
 
@@ -60,7 +60,7 @@ class ConnectRequest:
 class ConnectResult:
     connection_id: str
     berth: str
-    ship: str
+    ship_id: str
     plug: dict[str, object]
     demand: float
     headroom: float
@@ -132,7 +132,7 @@ def run_connect(runtime, request: ConnectRequest) -> ConnectResult:
     return ConnectResult(
         connection_id=connection_id,
         berth=request.berth,
-        ship=request.ship,
+        ship_id=request.ship,
         plug=connector.describe(),
         demand=runtime.profiles.demand(request.ship),
         headroom=runtime.profiles.headroom(request.ship),

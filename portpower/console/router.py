@@ -3,10 +3,17 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from typing import Protocol
 
 from portpower.console.http import Request, Response
 
 Handler = Callable[[Request], Response]
+
+
+class Dispatcher(Protocol):
+    """Anything the HTTP server can hand a request to."""
+
+    def dispatch(self, request: Request) -> Response: ...
 
 
 class Router:
@@ -30,9 +37,12 @@ class Router:
     def delete(self, path: str, handler: Handler) -> None:
         self.add("DELETE", path, handler)
 
+    def resolve(self, method: str, path: str) -> Handler | None:
+        return self._routes.get((method.upper(), path))
+
     def dispatch(self, request: Request) -> Response:
         method = request.method.upper()
-        handler = self._routes.get((method, request.path))
+        handler = self.resolve(method, request.path)
         if handler is not None:
             return handler(request)
         allowed = self._known_paths.get(request.path)

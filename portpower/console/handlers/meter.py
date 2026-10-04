@@ -19,7 +19,7 @@ def record_reading(runtime, request: Request) -> Response:
     reading = Reading.create(
         require_text(payload, "berth"),
         require_text(payload, "timestamp"),
-        require_number(payload, "value"),
+        require_number(payload, "kwh"),
     )
     meter = Meter(f"meter-{reading.berth}", reading.berth, runtime.store)
     if is_frozen(meter):

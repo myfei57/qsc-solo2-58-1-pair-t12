@@ -9,6 +9,11 @@ from dataclasses import dataclass
 DEFAULT_DATA_DIR = "data"
 DEFAULT_HOST = "0.0.0.0"
 DEFAULT_PORT = 8080
+DEFAULT_RATE_CAPACITY = 20.0
+DEFAULT_RATE_REFILL = 5.0
+DEFAULT_RATE_GLOBAL_CAPACITY = 200.0
+DEFAULT_RATE_GLOBAL_REFILL = 50.0
+DEFAULT_IDEMPOTENCY_TTL = 86400.0
 
 
 @dataclass(frozen=True)
@@ -18,6 +23,12 @@ class Settings:
     data_dir: str
     host: str
     port: int
+    version_policy: str = ""
+    rate_capacity: float = DEFAULT_RATE_CAPACITY
+    rate_refill: float = DEFAULT_RATE_REFILL
+    rate_global_capacity: float = DEFAULT_RATE_GLOBAL_CAPACITY
+    rate_global_refill: float = DEFAULT_RATE_GLOBAL_REFILL
+    idempotency_ttl: float = DEFAULT_IDEMPOTENCY_TTL
 
 
 def parse_listen_address(raw: str) -> tuple[str, int]:
@@ -45,6 +56,19 @@ def _coerce_port(text: str) -> int:
     return port
 
 
+def _coerce_float(text: str, default: float, name: str) -> float:
+    raw = text.strip()
+    if not raw:
+        return default
+    try:
+        value = float(raw)
+    except ValueError as exc:
+        raise ValueError(f"invalid {name}: {raw!r}") from exc
+    if value <= 0:
+        raise ValueError(f"{name} must be positive: {value}")
+    return value
+
+
 def load_settings(environ: Mapping[str, str] | None = None) -> Settings:
     """Read ``PORTPOWER_*`` variables, falling back to local defaults."""
 
@@ -55,4 +79,30 @@ def load_settings(environ: Mapping[str, str] | None = None) -> Settings:
         host, port = parse_listen_address(address)
     else:
         host, port = DEFAULT_HOST, DEFAULT_PORT
-    return Settings(data_dir=data_dir, host=host, port=port)
+    return Settings(
+        data_dir=data_dir,
+        host=host,
+        port=port,
+        version_policy=env.get("PORTPOWER_VERSION_POLICY", "").strip(),
+        rate_capacity=_coerce_float(
+            env.get("PORTPOWER_RATE_CAPACITY", ""), DEFAULT_RATE_CAPACITY, "rate capacity"
+        ),
+        rate_refill=_coerce_float(
+            env.get("PORTPOWER_RATE_REFILL", ""), DEFAULT_RATE_REFILL, "rate refill"
+        ),
+        rate_global_capacity=_coerce_float(
+            env.get("PORTPOWER_RATE_GLOBAL_CAPACITY", ""),
+            DEFAULT_RATE_GLOBAL_CAPACITY,
+            "global rate capacity",
+        ),
+        rate_global_refill=_coerce_float(
+            env.get("PORTPOWER_RATE_GLOBAL_REFILL", ""),
+            DEFAULT_RATE_GLOBAL_REFILL,
+            "global rate refill",
+        ),
+        idempotency_ttl=_coerce_float(
+            env.get("PORTPOWER_IDEMPOTENCY_TTL", ""),
+            DEFAULT_IDEMPOTENCY_TTL,
+            "idempotency ttl",
+        ),
+    )

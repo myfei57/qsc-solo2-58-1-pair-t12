@@ -22,19 +22,19 @@ def quota_list(runtime, request: Request) -> Response:
 
 def quota_set(runtime, request: Request) -> Response:
     payload = request.json_object()
-    ship = require_text(payload, "ship")
+    ship = require_text(payload, "ship_id")
     limit = require_number(payload, "limit")
     used = optional_number(payload, "used", 0.0)
     runtime.quotas.set(Quota(ship=ship, limit=limit, used=used))
     return Response.json(
         200,
-        {"set": True, "ship": ship, "remaining": remaining(runtime.quotas, ship)},
+        {"set": True, "ship_id": ship, "remaining": remaining(runtime.quotas, ship)},
     )
 
 
 def quota_reserve(runtime, request: Request) -> Response:
     payload = request.json_object()
-    ship = require_text(payload, "ship")
+    ship = require_text(payload, "ship_id")
     demand = require_number(payload, "demand")
     reserved = reserve(runtime.quotas, ship, demand)
     return Response.json(
@@ -45,7 +45,7 @@ def quota_reserve(runtime, request: Request) -> Response:
 
 def quota_release(runtime, request: Request) -> Response:
     payload = request.json_object()
-    ship = require_text(payload, "ship")
+    ship = require_text(payload, "ship_id")
     amount = require_number(payload, "amount")
     released = release(runtime.quotas, ship, amount)
     return Response.json(

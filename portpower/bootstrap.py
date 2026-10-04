@@ -6,6 +6,7 @@ import logging
 import threading
 
 from portpower.config import Settings, load_settings
+from portpower.console.gateway import build_gateway
 from portpower.console.routes import build_router
 from portpower.console.runtime import build_runtime
 from portpower.console.server import ConsoleServer
@@ -27,7 +28,8 @@ def create_server(settings: Settings | None = None) -> ConsoleServer:
     harbor = Harbor(DEFAULT_HARBOR_ID, DEFAULT_HARBOR_NAME)
     runtime = build_runtime(harbor, store)
     router = build_router(runtime)
-    return ConsoleServer(router, resolved.host, resolved.port)
+    gateway = build_gateway(runtime, router, resolved)
+    return ConsoleServer(gateway, resolved.host, resolved.port)
 
 
 def main() -> int:
